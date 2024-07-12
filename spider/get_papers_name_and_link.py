@@ -33,7 +33,7 @@ def get_all_paper_links(page_content):
 
 
 def save_paper_links(papers):
-    with open('data/paper_links.json', 'w', encoding='utf-8') as f:
+    with open('../data/paper_links.json', 'w', encoding='utf-8') as f:
         json.dump(papers, f, ensure_ascii=False, indent=4)
     print(f'保存成功！共{len(papers)}篇论文')
 

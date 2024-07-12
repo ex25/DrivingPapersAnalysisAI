@@ -2,10 +2,19 @@ import httpx
 from bs4 import BeautifulSoup
 import json
 
+from fake_useragent import UserAgent
+
 
 def get_cvpr24_home_page():
+    # 创建UserAgent对象
+    ua = UserAgent()
+
+    # 定义请求头
+    headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+               'Accept-Language': 'en-US,en;q=0.5', 'Connection': 'keep-alive', 'DNT': '1',
+               'Upgrade-Insecure-Requests': '1', 'User-Agent': ua.random}
     url = 'https://openaccess.thecvf.com/CVPR2024?day=all'
-    response = httpx.get(url)
+    response = httpx.get(url, headers=headers)
     return response.text
 
 

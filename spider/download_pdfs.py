@@ -20,7 +20,7 @@ logging.basicConfig(
 # 创建UserAgent对象
 ua = UserAgent()
 
-# 定义一些请求头
+# 定义请求头
 HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.5',
@@ -72,7 +72,7 @@ async def main():
     # 随机打乱顺序
     random.shuffle(papers)
 
-    semaphore = asyncio.Semaphore(10) # 并发数10
+    semaphore = asyncio.Semaphore(10)  # 并发数10
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
         tasks = [download_pdf(client, paper['title'], paper['pdf_url'], semaphore) for paper in papers]

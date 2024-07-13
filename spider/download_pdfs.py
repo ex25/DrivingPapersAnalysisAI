@@ -6,6 +6,8 @@ from tqdm import tqdm
 import logging
 import random
 from fake_useragent import UserAgent
+from database.db import get_connection
+from database.paper import Paper
 
 # 设置日志
 log_file = '../logs/download.log'
@@ -66,8 +68,10 @@ async def download_pdf(client, title, url, semaphore, path="../data/pdfs", max_r
 async def main():
     os.makedirs("../data/pdfs", exist_ok=True)
 
-    with open("../data/paper_links.json", "r", encoding="utf-8") as f:
-        papers = json.load(f)
+    # 连接数据库并获取论文信息
+    conn = get_connection()
+    papers = Paper.get_all_papers(conn)
+    conn.close()
 
     # 随机打乱顺序
     random.shuffle(papers)
@@ -75,7 +79,7 @@ async def main():
     semaphore = asyncio.Semaphore(10)  # 并发数10
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
-        tasks = [download_pdf(client, paper['title'], paper['pdf_url'], semaphore) for paper in papers]
+        tasks = [download_pdf(client, paper['title'], paper['url'], semaphore) for paper in papers]
 
         results = []
         for f in tqdm(asyncio.as_completed(tasks), total=len(tasks), desc="Downloading PDFs"):

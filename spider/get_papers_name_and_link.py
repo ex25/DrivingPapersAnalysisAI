@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 import json
 
 from fake_useragent import UserAgent
+from database.paper import Paper
+from database.db import get_connection
 
 
 def get_cvpr24_home_page():
@@ -42,8 +44,13 @@ def get_all_paper_links(page_content):
 
 
 def save_paper_links(papers):
-    with open('../data/paper_links.json', 'w', encoding='utf-8') as f:
-        json.dump(papers, f, ensure_ascii=False, indent=4)
+    conn = get_connection()
+    for paper in papers:
+        title = paper['title']
+        pdf_url = paper['pdf_url']
+        file_name = pdf_url.split('/')[-1]
+        Paper.add_paper(conn, title, pdf_url, file_name)
+    conn.close()
     print(f'保存成功！共{len(papers)}篇论文')
 
 

@@ -1,7 +1,3 @@
-import pymysql
-from database.db import get_connection
-
-
 class Paper:
     @staticmethod
     def get_all_papers(conn):

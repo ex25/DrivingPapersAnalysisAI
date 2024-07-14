@@ -2,6 +2,8 @@ import os
 import json
 import re
 import fitz  # PyMuPDF
+from database.db import get_connection
+from database.paper import Paper
 
 
 def remove_hyphenation(text):
@@ -57,50 +59,49 @@ def extract_conclusion_from_pdf(pdf_path):
     return extract_section_from_pdf(pdf_path, "Conclusion", "References")
 
 
-def process_multiple_pdfs(pdf_dir, paper_links_json, output_json):
-    with open(paper_links_json, 'r', encoding='utf-8') as f:
-        paper_links = json.load(f)
+def process_multiple_pdfs(pdf_dir):
+    conn = get_connection()
+    if not conn:
+        print("Failed to connect to the database")
+        return
+    try:
+        # 获取所有论文信息
+        papers = Paper.get_all_papers(conn)
+        if papers is None:
+            print("Failed to retrieve papers from database")
+            return
 
-    sections = []
+        for paper in papers:
+            title = paper['title']
+            pdf_url = paper['url']
+            file_name = paper['file_name'] or pdf_url.split('/')[-1]
+            pdf_path = os.path.join(pdf_dir, file_name)
 
-    for paper in paper_links:
-        title = paper['title']
-        pdf_url = paper['pdf_url']
-        file_name = pdf_url.split('/')[-1]
-        pdf_path = os.path.join(pdf_dir, file_name)
+            if os.path.exists(pdf_path):
+                abstract = extract_abstract_from_pdf(pdf_path)
+                introduction = extract_introduction_from_pdf(pdf_path)
+                conclusion = extract_conclusion_from_pdf(pdf_path)
 
-        if os.path.exists(pdf_path):
-            abstract = extract_abstract_from_pdf(pdf_path)
-            introduction = extract_introduction_from_pdf(pdf_path)
-            conclusion = extract_conclusion_from_pdf(pdf_path)
-            # 如果abstract和introduction都为空，则跳过这篇论文
+                # 如果abstract和introduction都为空，则跳过这篇论文
+                if not abstract and not introduction:
+                    continue
 
-            if not abstract and not introduction:
-                continue
+                if abstract == "" and introduction == "":
+                    continue
 
-            if abstract == "" and introduction == "":
-                continue
+                # 更新数据库
+                Paper.update_paper(conn, title, abstract=abstract,
+                                   introduction=introduction, conclusion=conclusion)
+            else:
+                print(f"File {file_name} not found in directory {pdf_dir}")
 
-            sections.append({
-                "title": title,
-                "file_name": file_name,
-                "abstract": abstract,
-                "introduction": introduction,
-                "conclusion": conclusion
-            })
-        else:
-            print(f"File {file_name} not found in directory {pdf_dir}")
-
-    with open(output_json, 'w', encoding='utf-8') as f:
-        json.dump(sections, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Error processing PDFs: {e}")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":
     # # 处理PDF目录中的所有PDF文件
     pdf_directory = "../data/pdfs"
-    paper_links_file = "../data/paper_links.json"
-    output_file = "../data/papers.json"
-    process_multiple_pdfs(pdf_directory, paper_links_file, output_file)
-    # with open('../data/papers.json', 'r', encoding='utf-8') as f:
-    #     papers = json.load(f)
-    #     print(len(papers))
+    process_multiple_pdfs(pdf_directory)

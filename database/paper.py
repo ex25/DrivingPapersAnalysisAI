@@ -1,3 +1,16 @@
+import logging
+import os
+
+log_file = '../logs/download.log'
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename=log_file,
+    filemode='a'
+)
+
+
 class Paper:
     @staticmethod
     def get_all_papers(conn):
@@ -12,7 +25,7 @@ class Paper:
                     papers.append(dic)
 
         except Exception as e:
-            print(e)
+            logging.error(f"Error in get_all_papers: {e}")
             return None
         return papers
 
@@ -28,7 +41,7 @@ class Paper:
                 paper = [{"title": data[1], "url": data[2], "file_name": data[3],
                          "abstract": data[4], "introduction": data[5], "conclusion": data[6]}]
         except Exception as e:
-            print(e)
+            logging.error(f"Error in get_paper_by_title: {e}")
             return None
         return paper
 
@@ -72,7 +85,7 @@ class Paper:
                 cur.execute("DELETE FROM papers WHERE title=%s", (title,))
                 conn.commit()
         except Exception as e:
-            print(e)
+            print(f"Error deleting paper: {e}")
             return False
         return True
 
@@ -105,9 +118,9 @@ class Paper:
                     conn.commit()
                     return True
                 else:
-                    print("No fields to update")
+                    logging.warning(f"No fields to update for paper with title {title}")
                     return False
         except Exception as e:
-            print(f"Error updating paper: {e}")
+            logging.error(f"Error updating paper: {e}")
             conn.rollback()
             return False

@@ -101,6 +101,14 @@ def process_multiple_pdfs(pdf_dir):
         conn.close()
 
 
+def get_pdf_text(pdf_path):
+    doc = fitz.open(pdf_path)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return remove_hyphenation(text)
+
+
 if __name__ == "__main__":
     # # 处理PDF目录中的所有PDF文件
     pdf_directory = "../data/pdfs"

@@ -13,10 +13,15 @@ logging.basicConfig(
 
 class Paper:
     @staticmethod
-    def get_all_papers(conn):
+    def get_all_papers(conn, limit=None, offset=None):
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM papers")
+                sql = 'SELECT * FROM papers'
+                if limit is not None:
+                    sql += f' LIMIT {limit}'
+                if offset is not None:
+                    sql += f' OFFSET {offset}'
+                cur.execute(sql)
                 datas = cur.fetchall()
                 papers = []
                 for row in datas:

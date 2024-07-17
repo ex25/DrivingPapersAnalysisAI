@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能驾驶领域论文分析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>导航栏</h2>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="/">首页</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('subfield-submenu')">子领域分类</a>
+                <ul class="submenu" id="subfield-submenu">
+                    <li><a class="nav-link" href="/statistics/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="subfield-tongyi">
+                    <li><a class="nav-link" href="/statistics/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('zero-shot-submenu')">Zero-Shot Prompt</a>
+                <ul class="submenu" id="zero-shot-submenu">
+                    <li><a class="nav-link" href="/zero-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="zero-shot-tongyi">
+                    <li><a class="nav-link" href="/zero-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('few-shot-submenu')">Few-Shot Prompt</a>
+                <ul class="submenu" id="few-shot-submenu">
+                    <li><a class="nav-link" href="/few-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="few-shot-tongyi">
+                    <li><a class="nav-link" href="/few-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <div class="content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">论文分析系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </nav>
+        <div class="jumbotron mt-4">
+            <h1 class="display-4">欢迎使用智能驾驶领域论文分析系统</h1>
+            <p class="lead">该系统利用大语言模型帮助科研人员筛选和分析智能驾驶领域的论文。</p>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+    <script>
+        function toggleSubmenu(id) {
+            var submenu = document.getElementById(id);
+            if (submenu.style.display === 'block') {
+                submenu.style.display = 'none';
+            } else {
+                submenu.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

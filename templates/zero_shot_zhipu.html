@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero-Shot Zhipu Chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>导航栏</h2>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/">首页</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('subfield-submenu')">子领域分类</a>
+                <ul class="submenu" id="subfield-submenu">
+                    <li><a class="nav-link" href="/statistics/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="subfield-tongyi">
+                    <li><a class="nav-link" href="/statistics/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="toggleSubmenu('zero-shot-submenu')">Zero-Shot Prompt</a>
+                <ul class="submenu" id="zero-shot-submenu">
+                    <li><a class="nav-link-active" href="/zero-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="zero-shot-tongyi">
+                    <li><a class="nav-link" href="/zero-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('few-shot-submenu')">Few-Shot Prompt</a>
+                <ul class="submenu" id="few-shot-submenu">
+                    <li><a class="nav-link" href="/few-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="few-shot-tongyi">
+                    <li><a class="nav-link" href="/few-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="jumbotron mt-3">
+            <h1>Zero-Shot Zhipu Chat</h1>
+            <p class="lead">基于智谱AI的Zero-Shot对话系统</p>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chat-box">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-box">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="file-input" class="file-input">
+                            <label for="file-input" class="file-input-label">选择文件</label>
+                        </div>
+                        <button onclick="sendFilePath()" class="send-button">发送</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 mt-3">
+                <div class="prompt-box">
+                    <h4>系统提示</h4>
+                    <textarea id="system-prompt" placeholder="在这里输入系统提示，它会在每次对话时生效"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            var fileName = e.target.files[0] ? e.target.files[0].name : '选择文件';
+            document.querySelector('.file-input-label').textContent = fileName;
+        });
+        function initializePage() {
+            const defaultSystemPrompt = "任务：分析给定的完整论文，提取其主要研究方法和核心思想。\n" +
+                "角色：你是一位经验丰富的跨学科研究专家，精通各种科研方法论和最新技术趋势。你能够快速理解各个领域的学术论文，并准确提炼出其关键方法和核心思想。\n" +
+                "背景：学术研究涉及广泛的领域和方法，包括但不限于实验研究、理论分析、计算机模拟、数据挖掘、机器学习等。每篇论文都有其独特的研究方法和核心思想，这些是理解和评估研究贡献的关键。\n" +
+                "输出格式：\n" +
+                "1. 研究方法：[简要描述论文采用的主要研究方法和技术]\n\n" +
+                "2. 核心思想：[概括论文的主要创新点和核心贡献]\n" +
+                "\n" +
+                "注意事项：\n" +
+                "- 严格遵守输出格式，方括号不需要保留！\n" +
+                "- 关注论文的创新性和独特贡献。\n" +
+                "- 用简洁明了的语言概括，每项不超过5句话。\n" +
+                "- 如果输入内容不是学术论文，请说明无法分析并简要解释原因。\n" +
+                "- 保持客观中立的分析态度。\n" +
+                "\n" +
+                "请仔细阅读整篇论文，包括但不限于标题、摘要、引言、方法、结果和讨论部分，然后按照上述格式输出分析结果。确保你的分析全面且准确地反映了论文的核心内容。";
+            document.getElementById('system-prompt').value = defaultSystemPrompt;
+        }
+
+        // 页面加载完成后调用初始化函数
+        window.onload = initializePage;
+        function toggleSubmenu(id) {
+            var submenu = document.getElementById(id);
+            if (submenu.style.display === 'block') {
+                submenu.style.display = 'none';
+            } else {
+                submenu.style.display = 'block';
+            }
+        }
+
+        function sendFilePath() {
+            var fileInput = document.getElementById('file-input');
+            var filePath = fileInput.value;
+            var systemPrompt = $('#system-prompt').val();
+            console.log(filePath);
+            let fileName = filePath.split('\\').pop();
+            if (!filePath) {
+                alert('请选择一个文件');
+                return;
+            }
+
+            var data = {
+                'file_path': filePath,
+                'system_prompt': systemPrompt
+            };
+
+            $('#chat-messages').append('<div class="user-message">' + fileName + '</div>');
+
+            fetch('/zhipu/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return handleStreamResponse(response);
+            })
+            .catch(error => {
+                console.error('Error sending file path:', error);
+                $('#chat-messages').append('<div class="bot-message">Error: ' + error.message + '</div>');
+            });
+        }
+
+        function handleStreamResponse(response) {
+            const reader = response.body.getReader();
+            const botMessage = $('<div class="bot-message"></div>');
+            $('#chat-messages').append(botMessage);
+
+            function read() {
+                return reader.read().then(({ done, value }) => {
+                    if (done) {
+                        console.log('Stream complete');
+                        return;
+                    }
+
+                    const text = new TextDecoder().decode(value);
+                    botMessage.append(document.createTextNode(text));
+
+                    return read();
+                });
+            }
+
+            return read();
+        }
+    </script>
+</body>
+</html>

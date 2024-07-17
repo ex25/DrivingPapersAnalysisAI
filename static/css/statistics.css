@@ -1,0 +1,51 @@
+.content {
+    margin-left: 250px;
+    padding: 20px;
+}
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+.card-title {
+    color: #007bff;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.card-text {
+    color: #007bff;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+.table {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+.table thead {
+    background-color: #007bff;
+    color: white;
+}
+.table th, .table td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+#total-papers {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+.jumbotron {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+.jumbotron h1 {
+    font-size: 2rem;
+}
+.jumbotron p {
+    font-size: 1rem;
+}
+/*#subdomain-chart {*/
+/*    max-height: 300px;*/
+/*}*/

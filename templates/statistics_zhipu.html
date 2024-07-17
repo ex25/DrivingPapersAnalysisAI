@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能驾驶领域论文分析系统 - 统计</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/statistics.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>导航栏</h2>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/">首页</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="toggleSubmenu('subfield-submenu')">子领域分类</a>
+                <ul class="submenu" id="subfield-submenu">
+                    <li><a class="nav-link-active" href="/statistics/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="subfield-tongyi">
+                    <li><a class="nav-link" href="/statistics/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('zero-shot-submenu')">Zero-Shot Prompt</a>
+                <ul class="submenu" id="zero-shot-submenu">
+                    <li><a class="nav-link" href="/zero-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="zero-shot-tongyi">
+                    <li><a class="nav-link" href="/zero-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('few-shot-submenu')">Few-Shot Prompt</a>
+                <ul class="submenu" id="few-shot-submenu">
+                    <li><a class="nav-link" href="/few-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="few-shot-tongyi">
+                    <li><a class="nav-link" href="/few-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <div class="content">
+        <div class="jumbotron mt-3">
+            <h1>智能驾驶领域论文统计</h1>
+            <p class="lead">基于智谱AI的论文分类结果</p>
+        </div>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">论文总数</h5>
+                        <p class="card-text" id="total-papers">加载中...</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">可应用于智能驾驶的论文数量</h5>
+                        <p class="card-text" id="applicable_papers">加载中...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">子领域分布</h5>
+                        <div id="subdomain-chart" style="width: 100%; height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>子领域</th>
+                            <th>论文数量</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subdomain-table">
+                        <!-- 数据将通过JavaScript动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+    <script>
+        function toggleSubmenu(id) {
+            var submenu = document.getElementById(id);
+            if (submenu.style.display === 'block') {
+                submenu.style.display = 'none';
+            } else {
+                submenu.style.display = 'block';
+            }
+        }
+
+        $(document).ready(function() {
+    let chart; // 声明一个变量来存储图表实例
+
+    function renderChart(data) {
+        const chartContainer = document.getElementById('subdomain-chart');
+
+        // 如果图表实例已存在，销毁它
+        if (chart) {
+            chart.dispose();
+        }
+
+        // 创建新的图表实例
+        chart = echarts.init(chartContainer);
+
+        // 对数据进行排序，从大到小
+        const chartData = data.classification_results
+            .map(item => ({
+                value: item.count,
+                name: item.subdomain
+            }))
+            .sort((a, b) => b.value - a.value);
+
+        const option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{a} <br/>{b} : {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                right: 10,
+                top: 'center',
+                textStyle: {
+                    fontSize: 12
+                }
+            },
+            series: [
+                {
+                    name: '子领域分布',
+                    type: 'pie',
+                    radius: ['20%', '70%'],
+                    center: ['40%', '50%'],
+                    roseType: 'area',
+                    itemStyle: {
+                        borderRadius: 8
+                    },
+                    label: {
+                        show: false
+                    },
+                    emphasis: {
+                        label: {
+                            show: true
+                        }
+                    },
+                    data: chartData
+                }
+            ]
+        };
+
+        chart.setOption(option);
+    }
+
+    $.get('/statistics/zhipu/result', function(data) {
+        $('#total-papers').text(data.paper_count);
+        $('#applicable_papers').text(data.applicable_paper_count);
+
+        renderChart(data);
+
+        const tableBody = $('#subdomain-table');
+
+        // Calculate percentages and create a new array with percentage
+        const resultsWithPercentage = data.classification_results.map(item => {
+            const percentage = ((item.count / data.applicable_paper_count) * 100).toFixed(2);
+            return { ...item, percentage }; // Include percentage in the object
+        });
+
+        // Sort the results by percentage in descending order
+        resultsWithPercentage.sort((a, b) => b.percentage - a.percentage);
+
+        // Append sorted items to the table
+        resultsWithPercentage.forEach(item => {
+            tableBody.append(`
+                <tr>
+                    <td>${item.subdomain}</td>
+                    <td>${item.count}</td>
+                    <td>${item.percentage}%</td>
+                </tr>
+            `);
+        });
+    });
+
+    // 添加窗口大小调整事件监听器
+    $(window).on('resize', function() {
+        if (chart) {
+            chart.resize();
+        }
+    });
+});
+    </script>
+</body>
+</html>

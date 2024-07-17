@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Few-Shot Zhipu Chat</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>导航栏</h2>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="/">首页</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('subfield-submenu')">子领域分类</a>
+                <ul class="submenu" id="subfield-submenu">
+                    <li><a class="nav-link" href="/statistics/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="subfield-tongyi">
+                    <li><a class="nav-link" href="/statistics/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="toggleSubmenu('zero-shot-submenu')">Zero-Shot Prompt</a>
+                <ul class="submenu" id="zero-shot-submenu">
+                    <li><a class="nav-link" href="/zero-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="zero-shot-tongyi">
+                    <li><a class="nav-link" href="/zero-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="toggleSubmenu('few-shot-submenu')">Few-Shot Prompt</a>
+                <ul class="submenu" id="few-shot-submenu">
+                    <li><a class="nav-link-active" href="/few-shot/zhipu">智谱</a></li>
+                </ul>
+                <ul class="submenu" id="few-shot-tongyi">
+                    <li><a class="nav-link" href="/few-shot/tongyi">通义千问</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="jumbotron mt-3">
+            <h1>Few-Shot Zhipu Chat</h1>
+            <p class="lead">基于智谱AI的Few-Shot对话系统</p>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="chat-box">
+                    <div id="chat-messages" class="chat-messages"></div>
+                    <div class="chat-input-box">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="file-input" class="file-input">
+                            <label for="file-input" class="file-input-label">选择文件</label>
+                        </div>
+                        <button onclick="sendFilePath()" class="send-button">发送</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12 mt-3">
+                <div class="prompt-box">
+                    <h4>系统提示</h4>
+                    <textarea id="system-prompt" placeholder="在这里输入系统提示，它会在每次对话时生效"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            var fileName = e.target.files[0] ? e.target.files[0].name : '选择文件';
+            document.querySelector('.file-input-label').textContent = fileName;
+        });
+        function initializePage() {
+            const defaultSystemPrompt = "任务：分析给定的完整论文，提取其主要研究方法和核心思想。\n" +
+                "角色：你是一位经验丰富的跨学科研究专家，精通各种科研方法论和最新技术趋势。你能够快速理解各个领域的学术论文，并准确提炼出其关键方法和核心思想。\n" +
+                "背景：学术研究涉及广泛的领域和方法，包括但不限于实验研究、理论分析、计算机模拟、数据挖掘、机器学习等。每篇论文都有其独特的研究方法和核心思想，这些是理解和评估研究贡献的关键。\n" +
+                "输出格式：\n" +
+                "1. 研究方法：[详细描述论文采用的主要研究方法和技术]\n" +
+                "2. 核心思想：[全面概括论文的主要创新点和核心贡献]\n" +
+                "\n" +
+                "注意事项：\n" +
+                "- 严格遵守输出格式，保留方括号！\n" +
+                "- 关注论文的创新性和独特贡献。\n" +
+                "- 用清晰、准确的语言进行详细描述，每项可包含3-5句话。\n" +
+                "- 如果输入内容不是学术论文，请说明无法分析并简要解释原因。\n" +
+                "- 保持客观中立的分析态度。\n" +
+                "\n" +
+                "示例1：\n" +
+                "论文：[论文1的完整内容，包括标题、摘要、引言、方法、结果、讨论等]\n" +
+                "分析：\n" +
+                "1. 研究方法：该研究采用了深度学习方法，特别是改进的卷积神经网络（CNN）结构来处理图像分类任务。研究者提出了一种新颖的多尺度注意力机制，能够自适应地关注图像中的不同区域和特征。此外，研究还引入了一种动态权重调整策略，使模型能够根据输入图像的复杂度自动调整网络参数。为了验证方法的有效性，研究者在多个公开数据集上进行了大规模实验，并与现有最先进的方法进行了全面比较。\n" +
+                "\n\n" +
+                "2. 核心思想：本研究的核心在于通过引入多尺度注意力机制来提高卷积神经网络在图像分类任务中的性能。这种机制使模型能够更加智能地关注图像中的重要区域，从而提高分类准确率，特别是在处理复杂场景和细粒度分类任务时表现出色。另一个关键创新点是动态权重调整策略，这使得模型具有更强的适应性和鲁棒性，能够更好地处理不同难度和复杂度的图像。研究结果表明，该方法不仅在准确率上超越了现有技术，而且在计算效率和模型解释性方面也取得了显著进展。\n" +
+                "\n" +
+                "示例2：\n" +
+                "论文：[论文2的完整内容]\n" +
+                "分析：\n" +
+                "1. 研究方法：该研究提出了一种创新的自然语言处理模型，巧妙地结合了Transformer架构和强化学习技术。研究者设计了一个复杂的双阶段训练过程：首先使用传统的监督学习方法预训练模型，然后应用强化学习进行微调。为了指导模型生成更加连贯和信息丰富的文本，研究者设计了一个多目标奖励函数，同时考虑了语义相关性、语法正确性和信息多样性等因素。此外，研究还引入了一种新的采样策略，以平衡探索和利用，提高强化学习的效率。\n" +
+                "\n" +
+                "2. 核心思想：本研究的核心创新在于将强化学习技术引入到基于Transformer的文本生成任务中，通过优化长期奖励来提高生成文本的整体质量。这种方法能够有效克服传统序列到序列模型中的exposure bias问题，生成更加自然、连贯和信息丰富的长文本。研究的另一个重要贡献是提出了一种新的评估框架，能够更全面地衡量生成文本的质量，包括流畅度、相关性和创新性等多个维度。实验结果表明，该方法不仅在各种文本生成任务（如摘要生成、对话系统和机器翻译）上取得了显著改进，而且生成的文本展现出更高的多样性和创造性。\n" +
+                "\n" +
+                "示例3：\n" +
+                "论文：[论文3的完整内容]\n" +
+                "分析：\n" +
+                "1. 研究方法：该研究提出了一种新颖的联邦学习算法，旨在在保护数据隐私的同时提高模型性能。研究者设计了一个创新的安全聚合协议，使参与方能够安全地共享模型更新而不泄露原始数据。该协议采用了同态加密和安全多方计算技术，确保了数据的端到端加密。为了解决联邦学习中的通信瓶颈问题，研究还提出了一种自适应压缩方法，可以根据网络条件和设备能力动态调整通信量。此外，研究者还开发了一个新的差分隐私机制，以进一步增强模型对推理攻击的抵抗力。\n" +
+                "\n" +
+                "2. 核心思想：本研究的核心在于全面改进联邦学习中的通信效率、隐私保护和模型性能，使分布式机器学习在实际应用中更加可行和安全。通过创新的安全聚合协议，该方法实现了参与方之间的高效协作，同时保护了每个参与方的数据隐私。自适应压缩技术的引入大大减少了通信开销，使得该方法能够适应各种网络环境和设备类型。差分隐私机制的应用进一步增强了模型的隐私保护能力，有效防止了各种推理攻击。这种综合优化的方法特别适用于涉及敏感数据的场景，如医疗健康、金融和政府部门等领域。实验结果表明，该方法不仅显著提高了模型性能，还大大降低了隐私泄露的风险，为联邦学习的实际部署提供了一个强有力的解决方案。\n";
+            document.getElementById('system-prompt').value = defaultSystemPrompt;
+        }
+
+        // 页面加载完成后调用初始化函数
+        window.onload = initializePage;
+        function toggleSubmenu(id) {
+            var submenu = document.getElementById(id);
+            if (submenu.style.display === 'block') {
+                submenu.style.display = 'none';
+            } else {
+                submenu.style.display = 'block';
+            }
+        }
+
+        function sendFilePath() {
+            var fileInput = document.getElementById('file-input');
+            var filePath = fileInput.value;
+            var systemPrompt = $('#system-prompt').val();
+            let fileName = filePath.split('\\').pop();
+            if (!filePath) {
+                alert('请选择一个文件');
+                return;
+            }
+
+            var data = {
+                'file_path': filePath,
+                'system_prompt': systemPrompt
+            };
+
+            $('#chat-messages').append('<div class="user-message">' + fileName + '</div>');
+
+            fetch('/zhipu/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return handleStreamResponse(response);
+            })
+            .catch(error => {
+                console.error('Error sending file path:', error);
+                $('#chat-messages').append('<div class="bot-message">Error: ' + error.message + '</div>');
+            });
+        }
+
+        function handleStreamResponse(response) {
+            const reader = response.body.getReader();
+            const botMessage = $('<div class="bot-message"></div>');
+            $('#chat-messages').append(botMessage);
+
+            function read() {
+                return reader.read().then(({ done, value }) => {
+                    if (done) {
+                        console.log('Stream complete');
+                        return;
+                    }
+
+                    const text = new TextDecoder().decode(value);
+                    if (text === null || text.trim() === '' || text.trim() === '\n' || text.trim() === '\r\n' || text.trim() === '\r' || text.trim() === '\t' || text.trim() ===' ') {
+                        botMessage.append(document.createTextNode('\n'));
+                    } else {
+                        botMessage.append(document.createTextNode(text));
+                    }
+
+                    return read();
+                });
+            }
+
+            return read();
+        }
+    </script>
+</body>
+</html>

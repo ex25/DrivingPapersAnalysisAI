@@ -7,8 +7,9 @@ from collections import deque
 
 from database.db import get_connection
 from database.classification import Classification
-from tool.zhipu import get_classification_result_by_zhipu, get_classification_response_by_zhipu_async, check_zhipu_async_classification_result
+from tool.zhipu import *
 from database.paper import Paper
+from tool.alibaba import *
 
 log_file = '../logs/classification.log'
 os.makedirs(os.path.dirname(log_file), exist_ok=True)
@@ -24,6 +25,7 @@ def process_result(result):
     # 处理result
     is_applicable = 'Y' in result[0]
     if is_applicable: is_applicable = 'Y'
+    else: is_applicable = 'N'
     sub_domain = ""
     reason = ""
     if is_applicable == 'Y':
@@ -33,33 +35,35 @@ def process_result(result):
     return dict_result
 
 
-# def classify_by_zhipu():
-#     conn = get_connection()
-#     papers = Paper.get_all_papers(conn)
-#     for paper in papers:
-#         if paper['abstract'] is None or paper['abstract'] == '':
-#             continue
-#         content = f"title: {paper['title']}; abstract: {paper['abstract']}"
-#
-#         max_retries = 10
-#         retry_delay = 1  # 秒
-#
-#         for attempt in range(max_retries):
-#             try:
-#                 result = get_result_by_zhipu(content=content)
-#                 dict_result = process_result(result)
-#                 Classification.classify(conn, paper['title'], is_applicable=dict_result["is_applicable"],
-#                                         sub_domain=dict_result["sub_domain"],
-#                                         classification_reason=dict_result["reason"], model="zhipu")
-#                 break  # 如果成功，跳出重试循环
-#             except Exception as e:
-#                 if attempt < max_retries - 1:  # 如果不是最后一次尝试
-#                     logging.error(f"处理论文 '{paper['title']}' 失败，正在重试。错误: {str(e)}")
-#                     time.sleep(retry_delay)  # 等待一段时间后重试
-#                 else:
-#                     logging.error(f"处理论文 '{paper['title']}' 失败，达到最大重试次数。错误: {str(e)}")
-#                     # 这里可以选择记录失败的论文，以便后续处理
-#     conn.close()
+def classify_by_tongyi():
+    conn = get_connection()
+    papers = Paper.get_all_papers(conn, limit=100, offset=311)
+    for paper in papers:
+        if paper['abstract'] is None or paper['abstract'] == '':
+            continue
+        content = f"title: {paper['title']}; abstract: {paper['abstract']}"
+
+        max_retries = 5
+        retry_delay = 1  # 秒
+
+        for attempt in range(max_retries):
+            try:
+                result = get_classification_result_by_tongyi(content=content)
+                dict_result = process_result(result)
+                print(dict_result)
+                Classification.classify(conn, paper['title'], is_applicable=dict_result["is_applicable"],
+                                        sub_domain=dict_result["sub_domain"],
+                                        classification_reason=dict_result["reason"], model="tongyi")
+                logging.info(f"处理论文 '{paper['title']}' 成功。")
+                break  # 如果成功，跳出重试循环
+            except Exception as e:
+                if attempt < max_retries - 1:  # 如果不是最后一次尝试
+                    logging.error(f"处理论文 '{paper['title']}' 失败，正在重试。错误: {str(e)}")
+                    time.sleep(retry_delay)  # 等待一段时间后重试
+                else:
+                    logging.error(f"处理论文 '{paper['title']}' 失败，达到最大重试次数。错误: {str(e)}")
+                    # 这里可以选择记录失败的论文，以便后续处理
+    conn.close()
 
 
 def classify_by_zhipu(datas, max_sync=10, wait_time=1, max_retries=10):
@@ -126,5 +130,6 @@ def get_datas_from_db():
 
 
 if __name__ == '__main__':
-    datas = get_datas_from_db()
-    classify_by_zhipu(datas, max_sync=10, wait_time=1, max_retries=10)
+    # datas = get_datas_from_db()
+    # classify_by_zhipu(datas, max_sync=10, wait_time=1, max_retries=10)
+    classify_by_tongyi()

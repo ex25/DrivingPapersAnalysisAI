@@ -40,3 +40,51 @@ class Classification:
             conn.rollback()
             logging.error(f"Error {'updating' if exists else 'inserting'} classification for title {title}: {e}")
 
+    @staticmethod
+    def get_classification_by_title(conn, title, model="zhipu"):
+        try:
+            with conn.cursor() as cursor:
+                # 首先检查是否存在对应的 title
+                check_sql = (f"SELECT is_applicable_{model}, subdomain_{model}, classification_reason_{model} "
+                             f"FROM paper_classifications WHERE title = %s")
+                cursor.execute(check_sql, (title,))
+                result = cursor.fetchone()
+                if result:
+                    return result
+                else:
+                    return None
+        except Exception as e:
+            logging.error(f"Error getting classification for title {title}: {e}")
+
+    @staticmethod
+    def get_classification_results(conn, model="zhipu"):
+        try:
+            with conn.cursor() as cursor:
+                # 获取论文总数
+
+                paper_count_sql = f"SELECT COUNT(*) FROM paper_classifications WHERE is_applicable_{model} IS NOT NULL"
+                cursor.execute(paper_count_sql)
+                paper_count = cursor.fetchone()[0]
+                # 计算能用于智能驾驶的论文数
+                applicable_paper_count_sql = (f"SELECT COUNT(*) FROM paper_classifications "
+                                              f"WHERE is_applicable_{model} = 'Y'")
+                cursor.execute(applicable_paper_count_sql)
+                applicable_paper_count = cursor.fetchone()[0]
+
+                # 获取各个分类的论文数
+                classification_count_sql = (f"SELECT subdomain_{model}, COUNT(*) AS count "
+                                            f"FROM paper_classifications "
+                                            f"WHERE is_applicable_{model} = 'Y'"
+                                            f"GROUP BY subdomain_{model}")
+                cursor.execute(classification_count_sql)
+                classification_count = cursor.fetchall()
+                classification_results = []
+                for classification in classification_count:
+                    classification_results.append({"subdomain": classification[0], "count": classification[1]})
+
+        except Exception as e:
+            logging.error(f"Error getting classification results: {e}")
+            return None
+
+        return {"paper_count": paper_count, "applicable_paper_count": applicable_paper_count,
+                "classification_results": classification_results}
